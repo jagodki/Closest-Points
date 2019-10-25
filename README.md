@@ -1,1 +1,1 @@
-# Closest-Points
+# Closest Points
