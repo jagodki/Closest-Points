@@ -29,21 +29,20 @@ __copyright__ = '(C) 2019 by Christoph Jung'
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
-from PyQt5.QtCore import QCoreApplication, QUrl
+from PyQt5.QtCore import QCoreApplication, QUrl, QVariant
 from PyQt5.QtGui import QIcon
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterVectorLayer,
-                       QgsProcessingParameterField,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterNumber,
-                       QgsCoordinateReferenceSystem,
-                       QgsProject,
                        QgsProcessingParameterFeatureSink,
-                       QgsWkbTypes)
+                       QgsWkbTypes,
+                       QgsField,
+                       QgsFields,
+                       QgsFeature)
 import processing
 import time, os.path
+from collections import Counter
 
 
 class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
@@ -64,10 +63,8 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    NETWORK = 'NETWORK'
-    TRAJECTORY = 'TRAJECTORY'
-    ORDER_FIELD = 'ORDER_FIELD'
-    BUFFER_RADIUS = 'BUFFER_RADIUS'
+    FROM_LAYER = 'FROM_LAYER'
+    TO_LAYER = 'TO_LAYER'
     OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, config):
@@ -78,43 +75,24 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
         
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.NETWORK,
-                self.tr('Network layer'),
-                [QgsProcessing.TypeVectorLine]
+                self.FROM_LAYER,
+                self.tr('Layer to calculate closest points from'),
+                [QgsProcessing.TypeVectorAnyGeometry]
             )
         )
         
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.TRAJECTORY,
-                self.tr('Trajectory layer'),
-                [QgsProcessing.TypeVectorPoint]
-            )
-        )
-        
-        self.addParameter(
-            QgsProcessingParameterField(
-                self.ORDER_FIELD,
-                self.tr('Order Trajectory by'),
-                parentLayerParameterName=self.TRAJECTORY,
-                type=QgsProcessingParameterField.Any
-            )
-        )
-        
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.BUFFER_RADIUS,
-                self.tr('Buffer radius around the Trajectory'),
-                type=QgsProcessingParameterNumber.Double,
-                defaultValue=0,
-                minValue=0.0
+                self.TO_LAYER,
+                self.tr('Layer to calculate closest points to'),
+                [QgsProcessing.TypeVectorAnyGeometry]
             )
         )
         
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.OUTPUT,
-                self.tr('Output layer')
+                self.tr('Closest Points')
             )
         )
 
@@ -124,28 +102,26 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
         '''
         start_time = time.time()
         
+        #create the fields for the feature sink
+        fields_array = [QgsField('id', QVariant.Int),
+                  QgsField('from_fid', QVariant.Int),
+                  QgsField('to_fid', QVariant.Int),
+                  QgsField('distance', QVariant.Double)]
+        
+        fields = QgsFields()
+        for field in fields_array:
+            fields.append(field)
+        
         #extract all parameters
-        network_layer = self.parameterAsVectorLayer(
+        from_layer = self.parameterAsVectorLayer(
             parameters,
-            self.NETWORK,
+            self.FROM_LAYER,
             context
         )
         
-        trajectory_layer = self.parameterAsVectorLayer(
+        to_layer = self.parameterAsVectorLayer(
             parameters,
-            self.TRAJECTORY,
-            context
-        )
-        
-        trajectory_order_field = self.parameterAsString(
-            parameters,
-            self.ORDER_FIELD,
-            context
-        )
-        
-        buffer = self.parameterAsDouble(
-            parameters,
-            self.BUFFER_RADIUS,
+            self.TO_LAYER,
             context
         )
         
@@ -153,60 +129,58 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
             parameters,
             self.OUTPUT,
             context,
-            network_layer.fields(),
-            QgsWkbTypes.LineString,
-            network_layer.crs()
+            fields,
+            QgsWkbTypes.Point,
+            from_layer.crs()
         )
         
+        #check the input
+        if from_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.FROM_LAYER))
+            
+        if to_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TO_LAYER))
+        
+        feedback.pushInfo('CRS of the first layer is {}'.format(from_layer.sourceCrs().authid()))
+        feedback.pushInfo('CRS of the second layer is {}'.format(to_layer.sourceCrs().authid()))
+        
+        if from_layer.sourceCrs().authid() != to_layer.sourceCrs().authid():
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.FROM_LAYER, self.TO_LAYER))
+        
         #init the progressbar
-        max_count = 4
-        counter = 0
-        feedback.setProgress(int((counter / max_count) * max_count))
+        max_count = len(Counter(from_layer.getFeatures()))
+        feedback.setProgress(0)
         
-        #trajectory to path
-        points_to_path = processing.run("qgis:pointstopath", {
-            'INPUT':trajectory_layer,
-            'ORDER_FIELD':trajectory_order_field,
-            'GROUP_FIELD':None,
-            'DATE_FORMAT':'',
-            'OUTPUT':'memory:path'
-        })
-        counter += 1
-        feedback.setProgress(int((counter / max_count) * max_count))
+        #init the id of the new layer
+        new_id = 1
         
-        #buffer path
-        buffer = processing.run("native:buffer", {
-            'INPUT':points_to_path['OUTPUT'],
-            'DISTANCE':buffer,
-            'SEGMENTS':5,
-            'END_CAP_STYLE':0,
-            'JOIN_STYLE':0,
-            'MITER_LIMIT':2,
-            'DISSOLVE':False,
-            'OUTPUT':'memory:buffer'})
-        counter += 1
-        feedback.setProgress(int((counter / max_count) * max_count))
+        #iterate over all features
+        for index, from_feature in enumerate(from_layer.getFeatures()):
+            
+            #iterate over the features of the second layer
+            for second_index, to_feature in enumerate(to_layer.getFeatures()):
+                
+                #calcuate the distance between the current features and store the result in the feature sink
+                distance = from_feature.geometry().distance(to_feature.geometry())
+                closest_point = to_feature.geometry().nearestPoint(from_feature.geometry())
+                
+                #add the new point to the sink
+                if closest_point is not None:
+                    new_feature = QgsFeature(fields)
+                    new_feature.setGeometry(closest_point)
+                    new_feature.setAttribute('id', new_id)
+                    new_feature.setAttribute('from_fid', index)
+                    new_feature.setAttribute('to_fid', second_index)
+                    new_feature.setAttribute('distance', distance)
+                    sink.addFeature(new_feature)
+                
+                new_id += 1
+            
+            #update progressbar
+            feedback.setProgress(int((index / max_count) * 100))
         
-        #clip network
-        clipped_network = processing.run("native:clip", {
-            'INPUT':network_layer,
-            'OVERLAY':buffer['OUTPUT'],
-            'OUTPUT':'memory:clip'})
-        counter += 1
-        feedback.setProgress(int((counter / max_count) * max_count))
-        
-        #multipart to single part
-        single_part_network = processing.run("native:multiparttosingleparts", {
-            'INPUT':clipped_network['OUTPUT'],
-            'OUTPUT':'memory:omm_clipped_network'})
-        counter += 1
-        feedback.setProgress(int((counter / max_count) * max_count))
-        
-        #add the result to the QGIS project
-        sink.addFeatures(single_part_network['OUTPUT'].getFeatures())
-        #QgsProject.instance().addMapLayer(single_part_network['OUTPUT'])
-        
-        return {'Finished ^o^': str(round(time.time() - start_time, 2))}
+        return {'OUTPUT': dest_id,
+                'COMPUTATION_TIME': str(time.time() - start_time)}
 
     def name(self):
         '''
@@ -243,30 +217,30 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         '''
-        return self.tr('Find all closest points')
+        return self.tr('Find all closest points for each feature')
 
-    def group(self):
-        '''
-        Returns the name of the group this algorithm belongs to. This string
-        should be localised.
-        '''
-        return self.tr(self.groupId())
+    # def group(self):
+        # '''
+        # Returns the name of the group this algorithm belongs to. This string
+        # should be localised.
+        # '''
+        # return self.tr(self.groupId())
     
-    def groupId(self):
-        '''
-        Returns the unique ID of the group this algorithm belongs to. This
-        string should be fixed for the algorithm, and must not be localised.
-        The group id should be unique within each provider. Group id should
-        contain lowercase alphanumeric characters only and no spaces or other
-        formatting characters.
-        '''
-        return 'Find closest points'
+    # def groupId(self):
+        # '''
+        # Returns the unique ID of the group this algorithm belongs to. This
+        # string should be fixed for the algorithm, and must not be localised.
+        # The group id should be unique within each provider. Group id should
+        # contain lowercase alphanumeric characters only and no spaces or other
+        # formatting characters.
+        # '''
+        # return 'Find closest points'
     
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return ClipNetworkAlgorithm()
+        return FindAllClosestPointsAlgorithm()
 
     def icon(self):
         return QIcon(':/plugins/closest_points/icons/all_closest_points_icon.png')

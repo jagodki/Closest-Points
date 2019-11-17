@@ -5,12 +5,12 @@
 [general]
 name=Closest Points
 qgisMinimumVersion=3.0
-description=This plugin extracts the closests points.
+description=This plugin extracts the closest points from one layer to another.
 version=1.0
 author=Christoph Jung
 email=jagodki.cj@gmail.com
 
-about=Provide a brief description of the plugin and its purpose.
+about=This plugin offers the possibility to find the closest points from one layer to another and store them in a new layer. There are several algorithms for different tasks.
 
 tracker=https://github.com/jagodki/Closest-Points/issues
 repository=https://github.com/jagodki/Closest-Points
@@ -20,7 +20,8 @@ repository=https://github.com/jagodki/Closest-Points
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog=
+changelog=
+	1.0.0 - first release
 
 # Tags are comma separated with spaces allowed
 tags=vector, point, points, closest, nearest

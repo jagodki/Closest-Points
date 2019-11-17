@@ -23,13 +23,18 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QMenu
+from qgis.core import *
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .closest_points_dialog import ClosestPointsDialog
 import os.path
+import processing
+
+#import own classes
+from .processing_provider import *
 
 
 class ClosestPoints:
@@ -66,6 +71,9 @@ class ClosestPoints:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+        
+        #declare additional instance vars
+        self.provider = ClosestPointsProvider()
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -159,25 +167,49 @@ class ClosestPoints:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/closest_points/icon.png'
-        self.add_action(
-            icon_path,
-            text=self.tr(u'closest point to each feature'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
+        
+        # self.add_action(
+            # icon_path,
+            # text=self.tr(u'Find closest point for each feature'),
+            # callback=self.runFindClosestPoint,
+            # parent=self.iface.mainWindow(),
+            # add_to_toolbar = False)
+            
+        #create actions
+        icon_closest_point = QIcon(':/plugins/closest_points/icon.png')
+        action_closest_point = QAction(icon_closest_point, 'Find closest point for each feature', self.iface.mainWindow())
+        action_closest_point.setObjectName('find_closest_point')
+        action_closest_point.triggered.connect(self.runFindClosestPoint)
+        self.actions.append(action_closest_point)
+        self.iface.addPluginToVectorMenu(self.menu, action_closest_point)
+        
+        icon_closest_point = QIcon(':/plugins/closest_points/icon.png')
+        action_all_closest_points = QAction(icon_closest_point, 'Find all closest points for each feature', self.iface.mainWindow())
+        action_all_closest_points.setObjectName('find_all_closest_points')
+        action_all_closest_points.triggered.connect(self.runFindAllClosestPoints)
+        self.actions.append(action_all_closest_points)
+        self.iface.addPluginToVectorMenu(self.menu, action_all_closest_points)
 
         # will be set False in run()
         self.first_start = True
+        
+        #add the processing provider
+        QgsApplication.processingRegistry().addProvider(self.provider)
 
+    def runFindClosestPoint(self):
+        processing.execAlgorithmDialog('find_closest_points:find_closest_point', {})
 
+    def runFindAllClosestPoints(self):
+        processing.execAlgorithmDialog('find_closest_points:find_all_closest_points', {})
+    
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginVectorMenu(
-                self.tr(u'&Closest Points'),
-                action)
-            self.iface.removeToolBarIcon(action)
+            self.iface.removePluginVectorMenu(self.menu, action)
+            #self.iface.removeToolBarIcon(action)
+        
+        #remove the processing provider
+        QgsApplication.processingRegistry().removeProvider(self.provider)
 
 
     def run(self):

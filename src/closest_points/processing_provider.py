@@ -32,18 +32,18 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import QgsProcessingProvider
 from PyQt5.QtGui import QIcon
-from .find_closest_point_to_each_feature.all_closest_points_algorithm import FindAllClosestPointsAlgorithm
-from .find_all_closest_points_for_each_feature.closest_point_algorithm import FindClosestPointsAlgorithm
+from .find_closest_point_to_each_feature.closest_point_algorithm import FindClosestPointsAlgorithm
+from .find_all_closest_points_for_each_feature.all_closest_points_algorithm import FindAllClosestPointsAlgorithm
 
 
 class ClosestPointsProvider(QgsProcessingProvider):
 
     def __init__(self):
         QgsProcessingProvider.__init__(self)
-
+        
         # Load algorithms
-        self.alglist = [FindClosestPointsAlgorithm,
-                        FindAllClosestPointsAlgorithm]
+        self.alglist = [FindClosestPointsAlgorithm(),
+                        FindAllClosestPointsAlgorithm()]
 
     def unload(self):
         '''
@@ -57,7 +57,7 @@ class ClosestPointsProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         '''
         for alg in self.alglist:
-            self.addAlgorithm( alg )
+            self.addAlgorithm(alg)
 
     def id(self):
         '''
@@ -65,7 +65,7 @@ class ClosestPointsProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg 'qgis' or
         'gdal'. This string should not be localised.
         '''
-        return 'omm'
+        return 'find_closest_points'
 
     def icon(self):
         return QIcon(':/plugins/closest_points/icons/icon.png')
