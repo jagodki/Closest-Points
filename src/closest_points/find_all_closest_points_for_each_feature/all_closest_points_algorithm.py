@@ -197,7 +197,7 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
         Returns the URL for the help document, if a help document does exist.
         '''
         dir = os.path.dirname(__file__)
-        file = os.path.abspath(os.path.join(dir, '..', 'help_docs', 'help.html'))
+        file = os.path.abspath(os.path.join(dir, '..', 'help', 'help_closest_points.html'))
         if not os.path.exists(file):
             return ''
         return QUrl.fromLocalFile(file).toString(QUrl.FullyEncoded)
@@ -205,7 +205,7 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
     def shortHelpString(self):
         '''Returns the text for the help widget, if a help document does exist.'''
         dir = os.path.dirname(__file__)
-        file = os.path.abspath(os.path.join(dir, '..', 'help_docs', 'help_processing_find_all_closest_points.html'))
+        file = os.path.abspath(os.path.join(dir, '..', 'help', 'help_closest_points.html'))
         if not os.path.exists(file):
             return ''
         with open(file) as helpf:

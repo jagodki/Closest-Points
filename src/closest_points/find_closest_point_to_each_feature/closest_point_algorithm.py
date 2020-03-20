@@ -200,7 +200,7 @@ class FindClosestPointsAlgorithm(QgsProcessingAlgorithm):
         Returns the URL for the help document, if a help document does exist.
         '''
         dir = os.path.dirname(__file__)
-        file = os.path.abspath(os.path.join(dir, '..', 'help_docs', 'help.html'))
+        file = os.path.abspath(os.path.join(dir, '..', 'help', 'help_closest_point.html'))
         if not os.path.exists(file):
             return ''
         return QUrl.fromLocalFile(file).toString(QUrl.FullyEncoded)
@@ -208,7 +208,7 @@ class FindClosestPointsAlgorithm(QgsProcessingAlgorithm):
     def shortHelpString(self):
         '''Returns the text for the help widget, if a help document does exist.'''
         dir = os.path.dirname(__file__)
-        file = os.path.abspath(os.path.join(dir, '..', 'help_docs', 'help_processing_find_closest_point.html'))
+        file = os.path.abspath(os.path.join(dir, '..', 'help', 'help_closest_point.html'))
         if not os.path.exists(file):
             return ''
         with open(file) as helpf:
@@ -220,7 +220,7 @@ class FindClosestPointsAlgorithm(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         '''
-        return self.tr('Find closest points for each feature')
+        return self.tr('Find closest point for each feature')
 
     def group(self):
         '''
