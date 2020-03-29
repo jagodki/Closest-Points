@@ -176,14 +176,14 @@ class ClosestPoints:
             # add_to_toolbar = False)
             
         #create actions
-        icon_closest_point = QIcon(':/plugins/closest_points/icon.png')
+        icon_closest_point = QIcon(':/plugins/closest_points/icons/closest_point_icon.png')
         action_closest_point = QAction(icon_closest_point, 'Find closest point for each feature', self.iface.mainWindow())
         action_closest_point.setObjectName('find_closest_point')
         action_closest_point.triggered.connect(self.runFindClosestPoint)
         self.actions.append(action_closest_point)
         self.iface.addPluginToVectorMenu(self.menu, action_closest_point)
         
-        icon_closest_point = QIcon(':/plugins/closest_points/icon.png')
+        icon_closest_point = QIcon(':/plugins/closest_points/icons/all_closest_points_icon.png')
         action_all_closest_points = QAction(icon_closest_point, 'Find all closest points for each feature', self.iface.mainWindow())
         action_all_closest_points.setObjectName('find_all_closest_points')
         action_all_closest_points.triggered.connect(self.runFindAllClosestPoints)

@@ -1,6 +1,6 @@
 <RCC>
-    <qresource prefix="/plugins/closest_points/icons" >
-        <file>all_closest_points_icon.png</file>
-        <file>closest_point_icon.png</file>
+    <qresource prefix="/plugins/closest_points" >
+        <file>icons/all_closest_points_icon.png</file>
+        <file>icons/closest_point_icon.png</file>
     </qresource>
 </RCC>
