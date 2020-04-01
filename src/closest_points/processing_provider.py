@@ -68,7 +68,7 @@ class ClosestPointsProvider(QgsProcessingProvider):
         return 'find_closest_points'
 
     def icon(self):
-        return QIcon(':/plugins/closest_points/icons/icon.png')
+        return QIcon(':/plugins/closest_points/icons/all_closest_points_icon.png')
     
     def name(self):
         '''
