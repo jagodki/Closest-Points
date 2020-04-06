@@ -9,7 +9,7 @@ This plugin provides the missing function with familiar, QGIS-standard interface
 ## Usage
 The plugin is available in the official plugin repository. After downloading and installing, it is located in the vector menu.
 The plugin offers mutliple functions, which are described in the following paragraphs.
-<img src="screenshots/vector_menu.png" width="100"/>
+<img src="screenshots/vector_menu.png" width="350"/>
 
 ### Find closest point for each feature
 This algorithm iterates over all features of one layer and calculates the closest point for each feature to a second layer.
