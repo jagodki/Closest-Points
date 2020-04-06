@@ -28,7 +28,7 @@ tags=vector, point, points, closest, nearest
 
 homepage=https://github.com/jagodki/Closest-Points
 category=Vector
-icon=icon.png
+icon=icons/all_closest_points_icon.png
 # experimental flag
 experimental=False
 
