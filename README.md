@@ -11,7 +11,7 @@ The plugin is available in the official plugin repository. After downloading and
 The plugin offers mutliple functions, which are described in the following paragraphs.
 <br>
 <img src="screenshots/vector_menu.png" width="500"/>
-<img src="screenshots/toolbox.png" width="300"/>
+<img src="screenshots/toolbox.png" height="130"/>
 
 ### Find closest point for each feature
 This algorithm iterates over all features of one layer and calculates the closest point for each feature to a second layer.
