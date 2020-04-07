@@ -9,6 +9,7 @@ This plugin provides the missing function with familiar, QGIS-standard interface
 ## Usage
 The plugin is available in the official plugin repository. After downloading and installing, it is located in the vector menu. It can be called from the toolbox and via the processing framework too.
 The plugin offers mutliple functions, which are described in the following paragraphs.
+<br>
 <img src="screenshots/vector_menu.png" width="500"/>
 <img src="screenshots/toolbox.png" width="300"/>
 
