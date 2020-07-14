@@ -6,7 +6,7 @@
 name=Closest Points
 qgisMinimumVersion=3.0
 description=get the closest points for one layer to another
-version=1.0.0
+version=1.0.1
 author=Christoph Jung
 email=jagodki.cj@gmail.com
 
@@ -21,6 +21,7 @@ repository=https://github.com/jagodki/Closest-Points
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
 changelog=
+	1.0.1 - remove a bug with wrong fid's from the input layers in the result layer
 	1.0.0 - first release
 
 # Tags are comma separated with spaces allowed
