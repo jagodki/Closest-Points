@@ -158,7 +158,7 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
         for index, from_feature in enumerate(from_layer.getFeatures()):
             
             #iterate over the features of the second layer
-            for second_index, to_feature in enumerate(to_layer.getFeatures()):
+            for to_feature in to_layer.getFeatures():
                 
                 #calcuate the distance between the current features and store the result in the feature sink
                 distance = from_feature.geometry().distance(to_feature.geometry())
@@ -169,8 +169,8 @@ class FindAllClosestPointsAlgorithm(QgsProcessingAlgorithm):
                     new_feature = QgsFeature(fields)
                     new_feature.setGeometry(closest_point)
                     new_feature.setAttribute('id', new_id)
-                    new_feature.setAttribute('from_fid', index)
-                    new_feature.setAttribute('to_fid', second_index)
+                    new_feature.setAttribute('from_fid', from_feature.id())
+                    new_feature.setAttribute('to_fid', to_feature.id())
                     new_feature.setAttribute('distance', distance)
                     sink.addFeature(new_feature)
                 
